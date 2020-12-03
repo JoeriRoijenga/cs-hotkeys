@@ -1,13 +1,9 @@
 import time
 import threading
 from pynput.mouse import Button
-from pynput.keyboard import Listener, Key, Controller, KeyCode
+from pynput.keyboard import Listener, Key, Controller, KeyCode, HotKey, GlobalHotKeys
 
-delay = 10
-button = Button.left
-start_key = Key.f1
-stop_key = Key.f2
-exit_key = Key.f3
+delay = 5
 
 class HotkeyClick(threading.Thread):
     
@@ -18,9 +14,11 @@ class HotkeyClick(threading.Thread):
         self.program_running = True
 
     def start_pressing(self):
+        print("start pressing")
         self.running = True
 
     def stop_pressing(self):
+        print("stop pressing")
         self.running = False
 
     def exit(self):
@@ -30,9 +28,11 @@ class HotkeyClick(threading.Thread):
     def run(self):
         while self.program_running:
             while self.running:
+                time.sleep(self.delay)
                 keyboard.press(Key.cmd)
                 keyboard.press("\\")
-                time.sleep(self.delay)
+                keyboard.release(Key.cmd)
+                keyboard.release("\\")
             time.sleep(0.1)
 
 
@@ -40,20 +40,9 @@ keyboard = Controller()
 press_thread = HotkeyClick(delay)
 press_thread.start()
 
-
-def on_press(key):
-    if key == start_key:
-        print("pressed")
-        if not press_thread.running:
-            print("start")
-            press_thread.start_pressing()
-    elif key == stop_key:
-        print("stop")
-        press_thread.stop_pressing()
-    elif key == exit_key:
-        print("exit")
-        press_thread.exit()
-        listener.stop()
-
-with Listener(on_press=on_press) as listener:
-    listener.join()
+# start: option + shift + ]
+# stop: option + shift + [
+with GlobalHotKeys({
+        '’': press_thread.start_pressing,
+        '”': press_thread.stop_pressing}) as h:
+    h.join()
